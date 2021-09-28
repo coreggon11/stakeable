@@ -9,18 +9,10 @@ contract Stakeable is ERC20, IStakeable {
     using SafeMath for uint256;
 
     mapping(address => StakingSummary) private stakings;
+    mapping(address => ClaimSummary[]) private claims;
 
     uint256 constant YEAR_HOURS = 365 * 24; //1 year in hours
     uint256 constant WITHDRAW_WAIT = 24 * 60 * 60; // 1 day in seconds
-
-    modifier canWithdraw() {
-        require(
-            block.timestamp >=
-                stakings[msg.sender].claimTimestamp + WITHDRAW_WAIT,
-            "Stakeable: CAN NOT WITHDRAW YET"
-        );
-        _;
-    }
 
     constructor(string memory name_, string memory symbol_)
         ERC20(name_, symbol_)
@@ -91,6 +83,15 @@ contract Stakeable is ERC20, IStakeable {
         );
         require(success_, "Stakeable: MATH ERROR");
         require(reward_ > 0, "Stakeable: NOTHING TO CLAIM");
+        if (userSummary_.rewardAmount > 0 || userSummary_.withdrawAmount > 0) {
+            claims[msg.sender].push(
+                ClaimSummary(
+                    userSummary_.claimTimestamp,
+                    userSummary_.withdrawAmount,
+                    userSummary_.rewardAmount
+                )
+            );
+        }
         stakings[msg.sender].reward = 0;
         stakings[msg.sender].stakeTimestamp = block.timestamp;
         stakings[msg.sender].claimTimestamp = block.timestamp;
@@ -112,8 +113,58 @@ contract Stakeable is ERC20, IStakeable {
         stakings[msg.sender].withdrawAmount = amount;
     }
 
-    function withdraw() public override canWithdraw {
+    function withdraw() public override {
         StakingSummary memory userSummary_ = stakings[msg.sender];
+        uint256 totalClaim_ = 0;
+        uint256 totalWithdraw_ = 0;
+        bool success_ = true;
+        if (block.timestamp >= userSummary_.claimTimestamp + WITHDRAW_WAIT) {
+            (success_, totalClaim_) = totalClaim_.tryAdd(
+                userSummary_.rewardAmount
+            );
+            require(success_, "Stakeable: MATH ERROR");
+            (success_, totalWithdraw_) = totalClaim_.tryAdd(
+                userSummary_.withdrawAmount
+            );
+            require(success_, "Stakeable: MATH ERROR");
+        }
+        ClaimSummary[] memory claimSummary_ = claims[msg.sender];
+        uint256 deleted = 0;
+        for (uint256 i = 0; i < claimSummary_.length; ++i) {
+            if (
+                block.timestamp >=
+                claimSummary_[i].claimTimestamp + WITHDRAW_WAIT
+            ) {
+                (success_, totalClaim_) = totalClaim_.tryAdd(
+                    claimSummary_[i].rewardAmount
+                );
+                require(success_, "Stakeable: MATH ERROR");
+                (success_, totalWithdraw_) = totalClaim_.tryAdd(
+                    claimSummary_[i].withdrawAmount
+                );
+                require(success_, "Stakeable: MATH ERROR");
+                ++deleted;
+            } else {
+                break;
+            }
+        }
+        require(
+            totalClaim_ > 0 || totalWithdraw_ > 0,
+            "Stakeable: NOTHING TO WITHDRAW"
+        );
+        if (deleted == claimSummary_.length) {
+            delete claims[msg.sender];
+        } else {
+            for (uint256 i = 0; i < deleted; ++i) {
+                delete claims[msg.sender][i];
+            }
+            for (uint256 i = deleted; i < claimSummary_.length; ++i) {
+                claims[msg.sender][i - deleted] = claimSummary_[i];
+            }
+            for (uint256 i = 0; i < deleted; ++i) {
+                claims[msg.sender].pop();
+            }
+        }
         _mint(msg.sender, userSummary_.rewardAmount);
         stakings[msg.sender].rewardAmount = 0;
         if (userSummary_.withdrawAmount > 0) {

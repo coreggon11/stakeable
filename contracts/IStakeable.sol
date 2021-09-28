@@ -11,6 +11,12 @@ interface IStakeable {
         uint256 rewardAmount; // how much of rewards will be withdrawn
     }
 
+    struct ClaimSummary {
+        uint256 claimTimestamp; // when claimed
+        uint256 withdrawAmount; // how much of staked coins will be withdrawn
+        uint256 rewardAmount; // how much of rewards will be withdrawn
+    }
+
     function stake(uint256 amount) external;
 
     function claim() external;
