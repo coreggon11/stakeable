@@ -39,10 +39,9 @@ contract Stakeable is ERC20, IStakeable {
         address to,
         uint256 amount
     ) internal override {
-        if (from == address(0x0)) {
-            return;
+        if (from != address(0x0)) {
+            require(balanceOf(from) >= amount, "Stakeable: NOT ENOUGH COINS");
         }
-        require(balanceOf(from) >= amount, "Stakeable: NOT ENOUGH COINS");
         super._beforeTokenTransfer(from, to, amount);
     }
 

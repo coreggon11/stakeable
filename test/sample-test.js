@@ -4,32 +4,29 @@ const { ethers } = require("hardhat");
 const COIN = "000000000000000000"
 
 describe("Steakoin", function () {
-  it("Should mint 2000 coins to deployer", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-    console.log(steakoin.address)
 
+  let Steakoin;
+  let steakoin;
+  let acc0;
+  let acc1;
+
+  beforeEach(async function () {
+    [acc0, acc1] = await ethers.getSigners()
+    Steakoin = await ethers.getContractFactory("Steakoin")
+    steakoin = await Steakoin.deploy()
+    await steakoin.deployed()
+  });
+
+  it("Should mint 2000 coins to deployer", async function () {
     expect(await steakoin.balanceOf(acc0.address)).to.equal("2000" + COIN)
   });
 
   it("Renounce owner ship by acc1", async function () {
-    const [acc0, acc1] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await expect(steakoin.connect(acc1).renounceOwnership()).to.be.reverted
   });
 
   // stake enough
   it("Should stake 100 coins", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
 
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
@@ -39,11 +36,6 @@ describe("Steakoin", function () {
   });
 
   it("Stake 100 and send 2000", async function () {
-    const [acc0, acc1] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
 
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
@@ -56,20 +48,11 @@ describe("Steakoin", function () {
 
   // stake more than i have
   it("Staking more than my balance should fail", async function () {
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await expect(steakoin.stake("2001" + COIN)).to.be.reverted
   });
 
   // stake again -> should add interest 15%
   it("Staking again should raise my reward", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -88,11 +71,6 @@ describe("Steakoin", function () {
 
   // stake 100 -> 115 after 1 year
   it("Should have 15 coins claimable after 1 year", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -108,11 +86,6 @@ describe("Steakoin", function () {
 
   // stake 1000 -> 1160 after 1 year
   it("Should have 160 coins claimable after 1 year", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("1000" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1000" + COIN)
 
@@ -128,11 +101,6 @@ describe("Steakoin", function () {
 
   // stake 1500 -> 1755 after 1 year
   it("Should have 255 coins claimable after 1 year", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("1500" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("500" + COIN)
 
@@ -148,11 +116,6 @@ describe("Steakoin", function () {
 
   // stake 2000 -> 2360 after 1 year
   it("Should have 360 coins claimable after 1 year", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("2000" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("0")
 
@@ -168,20 +131,11 @@ describe("Steakoin", function () {
 
   // claim without staking
   it("Claim without staking should fail", async function () {
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await expect(steakoin.claim()).to.be.reverted
   });
 
   // claim -> claimable
   it("Should have 15 coins ready to withdraw", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -197,11 +151,6 @@ describe("Steakoin", function () {
 
   // stake -> stake -> claim -> 0 reward and claimable
   it("Staking again and claiming should set reward to 0", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -222,11 +171,6 @@ describe("Steakoin", function () {
 
   // claim and withdraw -> claimable and stake
   it("Claim and withdraw 50 should set withdraw to 50 and reward to 15", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -244,11 +188,6 @@ describe("Steakoin", function () {
 
   // claim -> withdraw < 1 day
   it("Withdrawing 1 hour after claiming should fail", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -264,11 +203,6 @@ describe("Steakoin", function () {
 
   // claim -> withdraw >= 1 day
   it("Withdrawing 1 day after claiming should put tokens in balance", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -286,11 +220,6 @@ describe("Steakoin", function () {
 
   // claim and withdraw -> withdraw < 1 day
   it("Claim and withdraw 1 hour after claiming should fail", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
@@ -306,11 +235,6 @@ describe("Steakoin", function () {
 
   // claim and withdraw -> withdraw >= 1 day
   it("Claim and withdraw 1 day after claiming should put tokens in balance", async function () {
-    const [acc0] = await ethers.getSigners()
-    const Steakoin = await ethers.getContractFactory("Steakoin")
-    const steakoin = await Steakoin.deploy()
-    await steakoin.deployed()
-
     await steakoin.stake("100" + COIN)
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
 
