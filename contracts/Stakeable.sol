@@ -118,6 +118,14 @@ contract Stakeable is ERC20, IStakeable {
         if (userSummary_.withdrawAmount > 0) {
             stakings[msg.sender].withdrawAmount = 0;
         }
+        if (
+            userSummary_.stakeAmount == 0 &&
+            userSummary_.reward == 0 &&
+            userSummary_.withdrawAmount == 0 &&
+            userSummary_.rewardAmount == 0
+        ) {
+            delete stakings[msg.sender];
+        }
     }
 
     function getStakeSummary()
