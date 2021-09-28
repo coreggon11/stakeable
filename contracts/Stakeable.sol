@@ -23,7 +23,26 @@ contract Stakeable is ERC20, IStakeable {
         uint256 userStake_ = userSummary_.stakeAmount;
         uint256 totalBalance_ = super.balanceOf(account);
         require(totalBalance_ >= userStake_, "Stakeable: MATH ERROR");
-        return totalBalance_ - userStake_;
+        bool success_ = true;
+        (success_, totalBalance_) = totalBalance_.trySub(userStake_);
+        if (success_) {
+            (success_, totalBalance_) = totalBalance_.trySub(
+                userSummary_.withdrawAmount
+            );
+        }
+        if (success_) {
+            ClaimSummary[] memory claim_ = claims[msg.sender];
+            for (uint256 i = 0; i < claim_.length; ++i) {
+                (success_, totalBalance_) = totalBalance_.trySub(
+                    claim_[i].withdrawAmount
+                );
+                if (!success_) {
+                    break;
+                }
+            }
+        }
+        require(success_, "Stakeable: MATH ERROR");
+        return totalBalance_;
     }
 
     function _beforeTokenTransfer(
@@ -123,10 +142,12 @@ contract Stakeable is ERC20, IStakeable {
                 userSummary_.rewardAmount
             );
             require(success_, "Stakeable: MATH ERROR");
-            (success_, totalWithdraw_) = totalClaim_.tryAdd(
+            (success_, totalWithdraw_) = totalWithdraw_.tryAdd(
                 userSummary_.withdrawAmount
             );
             require(success_, "Stakeable: MATH ERROR");
+            stakings[msg.sender].rewardAmount = 0;
+            stakings[msg.sender].withdrawAmount = 0;
         }
         ClaimSummary[] memory claimSummary_ = claims[msg.sender];
         uint256 deleted = 0;
@@ -165,11 +186,7 @@ contract Stakeable is ERC20, IStakeable {
                 claims[msg.sender].pop();
             }
         }
-        _mint(msg.sender, userSummary_.rewardAmount);
-        stakings[msg.sender].rewardAmount = 0;
-        if (userSummary_.withdrawAmount > 0) {
-            stakings[msg.sender].withdrawAmount = 0;
-        }
+        _mint(msg.sender, totalClaim_);
         if (
             userSummary_.stakeAmount == 0 &&
             userSummary_.reward == 0 &&
