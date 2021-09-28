@@ -38,6 +38,22 @@ describe("Steakoin", function () {
     expect(summary.stakeAmount.toString()).to.equal("100" + COIN)
   });
 
+  it("Stake 100 and send 2000", async function () {
+    const [acc0, acc1] = await ethers.getSigners()
+    const Steakoin = await ethers.getContractFactory("Steakoin")
+    const steakoin = await Steakoin.deploy()
+    await steakoin.deployed()
+
+    await steakoin.stake("100" + COIN)
+
+    expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
+
+    let summary = await steakoin.getStakeSummary()
+    expect(summary.stakeAmount.toString()).to.equal("100" + COIN)
+
+    await expect(steakoin.transfer(acc1.address, "2000" + COIN)).to.be.reverted
+  });
+
   // stake more than i have
   it("Staking more than my balance should fail", async function () {
     const Steakoin = await ethers.getContractFactory("Steakoin")
