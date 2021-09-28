@@ -12,7 +12,6 @@ contract Stakeable is ERC20, IStakeable {
 
     uint256 constant YEAR_HOURS = 365 * 24; //1 year in hours
     uint256 constant WITHDRAW_WAIT = 24 * 60 * 60; // 1 day in seconds
-    uint256 constant TIME_MULTIPLIER = 100000000;
 
     modifier canWithdraw() {
         require(
@@ -40,6 +39,9 @@ contract Stakeable is ERC20, IStakeable {
         address to,
         uint256 amount
     ) internal override {
+        if (from == address(0x0)) {
+            return;
+        }
         require(balanceOf(from) >= amount, "Stakeable: NOT ENOUGH COINS");
         super._beforeTokenTransfer(from, to, amount);
     }
@@ -140,15 +142,13 @@ contract Stakeable is ERC20, IStakeable {
     function claimableReward(StakingSummary memory userSummary_)
         private
         view
-        returns (uint256)
+        returns (uint256 reward_)
     {
         uint256 hoursPassed = (block.timestamp - userSummary_.stakeTimestamp) /
             3600; // time passed in hours
         uint256 apy_ = (userSummary_.stakeAmount / 100) *
             apy(userSummary_.stakeAmount);
-        uint256 timeUnit = (hoursPassed * TIME_MULTIPLIER) / YEAR_HOURS;
-        uint256 reward_ = (apy_ * timeUnit) / TIME_MULTIPLIER;
-        return reward_;
+        reward_ = (apy_ * hoursPassed) / YEAR_HOURS;
     }
 
     function claimableReward() public view returns (uint256) {
