@@ -213,9 +213,27 @@ contract Stakeable is ERC20, IStakeable {
     {
         uint256 hoursPassed = (block.timestamp - userSummary_.stakeTimestamp) /
             3600; // time passed in hours
-        uint256 apy_ = (userSummary_.stakeAmount / 100) *
-            apy(userSummary_.stakeAmount);
-        reward_ = (apy_ * hoursPassed) / YEAR_HOURS;
+        // how much I get for 1 year
+        uint256 percent_ = apy(userSummary_.stakeAmount);
+        (bool success_, uint256 full_) = userSummary_.stakeAmount.tryMul(100);
+        require(success_, "Stakeable: MATH ERROR");
+        uint256 helper_ = 0;
+        (success_, helper_) = userSummary_.stakeAmount.tryMul((100 - percent_));
+        require(success_, "Stakeable: MATH ERROR");
+        (success_, helper_) = full_.trySub(helper_);
+        require(success_, "Stakeable: MATH ERROR");
+        uint256 yearApy_ = helper_ / 100;
+        // how much I get for 1 hour
+        (success_, full_) = yearApy_.tryMul(YEAR_HOURS);
+        require(success_, "Stakeable: MATH ERROR");
+        (success_, helper_) = yearApy_.tryMul(YEAR_HOURS - 1);
+        require(success_, "Stakeable: MATH ERROR");
+        uint256 hourApy_ = 0;
+        (success_, hourApy_) = full_.trySub(helper_);
+        require(success_, "Stakeable: MATH ERROR");
+        (success_, reward_) = hoursPassed.tryMul(hourApy_);
+        require(success_, "Stakeable: MATH ERROR");
+        reward_ = reward_ / YEAR_HOURS;
     }
 
     function claimableReward() public view returns (uint256) {
