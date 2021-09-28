@@ -12,6 +12,7 @@ contract Stakeable is ERC20, IStakeable {
 
     uint256 constant YEAR_HOURS = 365 * 24; //1 year in hours
     uint256 constant WITHDRAW_WAIT = 24 * 60 * 60; // 1 day in seconds
+    uint256 constant TIME_MULTIPLIER = 100000000;
 
     modifier canWithdraw() {
         require(
@@ -137,8 +138,8 @@ contract Stakeable is ERC20, IStakeable {
             3600; // time passed in hours
         uint256 apy_ = (userSummary_.stakeAmount / 100) *
             apy(userSummary_.stakeAmount);
-        uint256 timeUnit = (hoursPassed * 100000000) / YEAR_HOURS;
-        uint256 reward_ = (apy_ * timeUnit) / 100000000;
+        uint256 timeUnit = (hoursPassed * TIME_MULTIPLIER) / YEAR_HOURS;
+        uint256 reward_ = (apy_ * timeUnit) / TIME_MULTIPLIER;
         return reward_;
     }
 
