@@ -249,4 +249,38 @@ describe("Steakoin", function () {
 
     expect(await steakoin.balanceOf(acc0.address)).to.equal("1965" + COIN)
   });
+
+  it("Claim, wait one day, claim, and withdraw should give me last reward", async function () {
+    await steakoin.stake("100" + COIN)
+    expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
+
+    let summary = await steakoin.getStakeSummary()
+    expect(summary.stakeAmount.toString()).to.equal("100" + COIN)
+
+    await ethers.provider.send('evm_increaseTime', [60 * 60 * 24 * 365])
+
+    await steakoin.claim()
+    await ethers.provider.send('evm_increaseTime', [60 * 60 * 24]) // + 1 day
+    await steakoin.claim()
+    await steakoin.withdraw()
+
+    expect(await steakoin.balanceOf(acc0.address)).to.equal("1915" + COIN)
+  });
+
+  it("Claim and withdraw, wait one day, claim, and withdraw should give me last reward", async function () {
+    await steakoin.stake("100" + COIN)
+    expect(await steakoin.balanceOf(acc0.address)).to.equal("1900" + COIN)
+
+    let summary = await steakoin.getStakeSummary()
+    expect(summary.stakeAmount.toString()).to.equal("100" + COIN)
+
+    await ethers.provider.send('evm_increaseTime', [60 * 60 * 24 * 365])
+
+    await steakoin.claimAndWithdraw("50" + COIN)
+    await ethers.provider.send('evm_increaseTime', [60 * 60 * 24]) // + 1 day
+    await steakoin.claimAndWithdraw("50" + COIN)
+    await steakoin.withdraw()
+
+    expect(await steakoin.balanceOf(acc0.address)).to.equal("1965" + COIN)
+  });
 });
